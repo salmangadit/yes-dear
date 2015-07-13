@@ -1,0 +1,155 @@
+extends layout
+
+block scripts
+	script(src='http://static.ak.fbcdn.net/connect/en_US/core.js')
+	script(src='/javascripts/jquery-2.1.4.min.js')
+
+block content
+	script.
+		// This is called with the results from from FB.getLoginStatus().
+		function statusChangeCallback(response) {
+			console.log('statusChangeCallback');
+			console.log(response);
+			
+			if (response.status === 'connected') {
+				// Logged into your app and Facebook.
+				loadProfile();
+			} else if (response.status === 'not_authorized') {
+				// The person is logged into Facebook, but not your app.
+				console.log('Please log into this app.');
+			} else {
+				// The person is not logged into Facebook, so we're not sure if
+				// they are logged into this app or not.
+				console.log('Please log into Facebook.');
+			}
+		}
+		
+		window.fbAsyncInit = function() {
+			FB.init({
+				appId      : '1685554965007919',
+				xfbml      : true,
+				version    : 'v2.3'
+			});
+			
+			FB.getLoginStatus(function(response) {
+				statusChangeCallback(response);
+			});
+		};
+			
+		(function(d, s, id){
+		var js, fjs = d.getElementsByTagName(s)[0];
+		if (d.getElementById(id)) {return;}
+		js = d.createElement(s); js.id = id;
+		js.src = "//connect.facebook.net/en_US/sdk.js";
+		fjs.parentNode.insertBefore(js, fjs);
+		}(document, 'script', 'facebook-jssdk'));
+			
+		function loadProfile() {
+			FB.api('/me?fields=id,picture,first_name', function(response) {
+				console.log('Successful login for: ' + response.name);
+				console.log(response);
+				$('#welcome_text').text('Welcome, ' + response.first_name);
+				$("#profileImg").attr("src", response.picture.data.url);
+			});
+			
+			getAllowedInvitees();
+		}
+		
+		function getAllowedInvitees(){
+			$.get( "/allowed_invitees", function( data ) {
+				console.log(data.data.length);
+				console.log(data);
+				
+				for(var i=0; i<data.data.length; i++){
+					console.log(data.data[i].fb_name);
+					addToTable(data.data[i].fb_name);
+				}
+			});
+		}
+		
+		var invitee_index = 0;
+		
+		function addToTable(name, attending, nationality){
+			if (typeof(attending) == 'undefined'){
+				console.log("hmm")
+				attending = false;
+			}
+		
+			if (typeof(nationality) == 'undefined'){
+				nationality = "Unknown";
+			}
+			
+			console.log("Appending " + name);
+			$("#inviteeTable").find('tbody')
+			.append('<tr id="invitee_row_'+ invitee_index +'">'
+					+'<td id="invitee_'+ invitee_index +'">'
+					+ name 
+					+'</td><td>'
+					+ attending 
+					+'</td><td>'
+					+ nationality 
+					+'</td><td>'
+					+'<btn class="btn btn-primary">View</btn>'
+					+'<btn class="btn btn-warning" onclick="removeInvitee(' + invitee_index + ')">Remove</btn>'
+					+'</td></tr>');
+			
+			invitee_index++;
+		}
+		
+		function addInvitee(){
+			var invitee = $('#inviteeName').val();
+			
+			console.log('Adding ' + invitee);
+			if (invitee == ""){
+				alert("Enter the Facebook name for the invitee");
+				return;
+			}
+			
+			$.post( "/allowed_invitees", { fb_name: invitee }, function( data ) {
+			  console.log(data);
+			  addToTable(invitee);
+			});
+		}
+		
+		function removeInvitee(inviteeIndex){
+			console.log("Remove invitee number: ");
+			console.log(inviteeIndex);
+			console.log($('#invitee_'+inviteeIndex).text())
+			
+			$.post( "/allowed_invitees/delete", { fb_name: $('#invitee_'+inviteeIndex).text() }, function( data ) {
+			  console.log(data);
+			  $('#invitee_row_'+inviteeIndex).remove();
+			});
+		}
+
+	.text-center
+		h1 #SalmanWedsSana
+	.container
+		.row
+			.col-md-10
+			.col-md-1
+				h4#welcome_text Welcome!
+			.col-md-1
+				img#profileImg.thumbnail(src="")
+		.row.text-center
+			h4 Add invitees
+		.row
+			.col-md-2
+			.col-md-8
+				input#inviteeName.form-control(type="text", placeholder="Facebook name of Invitee")
+			.col-md-2
+				btn.btn.btn-success(onclick="addInvitee()")
+					.glyphicon.glyphicon-plus
+		hr
+		.row.text-center
+			h4 Invitees list
+		.row
+			.col-md-12
+				table#inviteeTable.table.table-striped
+					thead
+						tr
+							th Name
+							th Attending?
+							th Nationality
+							th Actions
+					tbody#table_body
