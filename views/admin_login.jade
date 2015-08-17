@@ -59,7 +59,7 @@ block content
         
         $.post( "/admin/login", { id: response.id, name: response.name, accessToken: accessToken }, function( data ) {
           console.log(data);
-          location.href = data.render + "/" + response.id;
+          location.href = "/admin/home/" + response.id;
         });
       });
     }
