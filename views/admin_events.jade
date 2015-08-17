@@ -3,6 +3,7 @@ extends layout
 block scripts
 	script(src='http://static.ak.fbcdn.net/connect/en_US/core.js')
 	script(src='/javascripts/jquery-2.1.4.min.js')
+	script(src='/javascripts/bootstrap.min.js')
 
 block content
 	script.
@@ -58,69 +59,62 @@ block content
 		}
 		
 		function getAllowedInvitees(){
-			$.get( "/allowed_invitees", function( data ) {
+			$.get( "/events", function( data ) {
 				console.log(data.data.length);
 				console.log(data);
 				
 				for(var i=0; i<data.data.length; i++){
-					console.log(data.data[i].fb_name);
-					addToTable(data.data[i].fb_name);
+					console.log(data.data[i]);
+					addToTable(data.data[i].name, data.data[i].date, data.data[i].label);
 				}
 			});
 		}
 		
-		var invitee_index = 0;
+		var event_index = 0;
 		
-		function addToTable(name, attending, nationality){
-			if (typeof(attending) == 'undefined'){
-				console.log("hmm")
-				attending = false;
-			}
-		
-			if (typeof(nationality) == 'undefined'){
-				nationality = "Unknown";
-			}
-			
+		function addToTable(name, date, label){
 			console.log("Appending " + name);
-			$("#inviteeTable").find('tbody')
-			.append('<tr id="invitee_row_'+ invitee_index +'">'
-					+'<td id="invitee_'+ invitee_index +'">'
+			$("#eventsTable").find('tbody')
+			.append('<tr id="event_row_'+ event_index +'">'
+					+'<td id="event_'+ event_index +'">'
 					+ name 
 					+'</td><td>'
-					+ attending 
+					+ date 
 					+'</td><td>'
-					+ nationality 
+					+ label 
 					+'</td><td>'
 					+'<btn class="btn btn-primary">View</btn>'
-					+'<btn class="btn btn-warning" onclick="removeInvitee(' + invitee_index + ')">Remove</btn>'
+					+'<btn class="btn btn-warning" onclick="removeInvitee(' + event_index + ')">Remove</btn>'
 					+'</td></tr>');
 			
-			invitee_index++;
+			event_index++;
 		}
 		
-		function addInvitee(){
-			var invitee = $('#inviteeName').val();
+		function addEvent(){
+			var eventName = $('#eventName').val();
+			var eventDate = $('#eventDate').val();
+			var eventLabel = $('#eventLabel').val();
 			
-			console.log('Adding ' + invitee);
-			if (invitee == ""){
-				alert("Enter the Facebook name for the invitee");
+			console.log('Adding ' + eventName);
+			if (eventName == ""){
+				alert("Enter name for the event");
 				return;
 			}
 			
-			$.post( "/allowed_invitees", { fb_name: invitee }, function( data ) {
+			$.post( "/events", { name: eventName, date: eventDate, label: eventLabel }, function( data ) {
 			  console.log(data);
-			  addToTable(invitee);
+			  addToTable(eventName, eventDate, eventLabel);
 			});
 		}
 		
-		function removeInvitee(inviteeIndex){
+		function removeInvitee(eventIdx){
 			console.log("Remove invitee number: ");
-			console.log(inviteeIndex);
-			console.log($('#invitee_'+inviteeIndex).text())
+			console.log(eventIdx);
+			console.log($('#event_'+eventIdx).text())
 			
-			$.post( "/allowed_invitees/delete", { fb_name: $('#invitee_'+inviteeIndex).text() }, function( data ) {
+			$.post( "/events/delete", { name: $('#event_'+eventIdx).text() }, function( data ) {
 			  console.log(data);
-			  $('#invitee_row_'+inviteeIndex).remove();
+			  $('#event_row_'+eventIdx).remove();
 			});
 		}
 
@@ -138,9 +132,9 @@ block content
 					a.navbar-brand(href="/") #SalmanWedsSana
 				#navbar-collapse.collapse.navbar-collapse
 					ul.nav.navbar-nav
-						li.active
+						li
 							a(href="/admin/home") Invitees
-						li 
+						li.active 
 							a(href="/admin/events") Events
 					ul.nav.navbar-nav.navbar-right
 						li
@@ -152,24 +146,36 @@ block content
 			.col-md-1
 				img#profileImg.thumbnail(src="")
 		.row.text-center
-			h4 Add invitees
+			h4 Add events
 		.row
+			.col-md-3
+				input#eventName.form-control(type="text", placeholder="Event name")
+			.col-md-3
+				input#eventDate.form-control(type="text", placeholder="Event date: dd/mm/yyyy")
+			.col-md-3
+				.dropdown
+					button.btn-default.dropdown-toggle#eventLabel(type="button", data-toggle="dropdown", aria-haspopup="true", aria-expanded="true") Event Label
+						span.caret
+					ul.dropdown-menu(aria-labelledby="eventLabel")
+						li.label.label-default Default
+						li.label.label-primary Primary
+						li.label.label-success Success
+						li.label.label-warning Warning
+						li.label.label-danger Danger
+						li.label.label-info Info
 			.col-md-2
-			.col-md-8
-				input#inviteeName.form-control(type="text", placeholder="Facebook name of Invitee")
-			.col-md-2
-				btn.btn.btn-success(onclick="addInvitee()")
+				btn.btn.btn-success(onclick="addEvent()")
 					.glyphicon.glyphicon-plus
 		hr
 		.row.text-center
-			h4 Invitees list
+			h4 Events list
 		.row
 			.col-md-12
-				table#inviteeTable.table.table-striped
+				table#eventsTable.table.table-striped
 					thead
 						tr
 							th Name
-							th Attending?
-							th Nationality
-							th Actions
+							th Event Date
+							th Label
+							th Notes
 					tbody#table_body

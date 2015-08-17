@@ -22,6 +22,14 @@ var allowedInvitees = new mongoose.Schema({
 });
 var AllowedInvitees = mongoose.model( 'AllowedInvitees', allowedInvitees );
 
+var eventsSchema = new mongoose.Schema({
+	name: String,
+	date: Date,
+	notes: String,
+	label: {type:String, enum:['default', 'primary', 'success', 'warning', 'danger', 'info'], default:'default'}
+});
+var Events = mongoose.model( 'Events', eventsSchema );
+
 var rsvpSchema = new mongoose.Schema({
 	fb_id: String,
 	coming: Boolean,
